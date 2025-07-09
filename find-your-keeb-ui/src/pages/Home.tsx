@@ -20,6 +20,8 @@ import { apiService } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 
+const BACKEND_URL = "http://localhost:8080";
+
 const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,7 +237,7 @@ const Home: React.FC = () => {
                 >
                   <CardMedia
                     component="img"
-                    src={product.imageUrl}
+                    src={product.imageUrl ? (product.imageUrl.startsWith('/product-images/') ? BACKEND_URL + product.imageUrl : product.imageUrl) : 'https://via.placeholder.com/300x200?text=Keyboard'}
                     alt={product.name}
                     sx={{ height: 200, objectFit: 'cover' }}
                   />

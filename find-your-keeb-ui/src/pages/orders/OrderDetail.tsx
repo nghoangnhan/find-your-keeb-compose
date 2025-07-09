@@ -22,6 +22,8 @@ import { Order, OrderStatus } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
+const BACKEND_URL = "http://localhost:8080";
+
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
@@ -222,7 +224,7 @@ const OrderDetail: React.FC = () => {
                       <Grid item xs={3}>
                         <Box sx={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 1, background: '#222' }}>
                           <img
-                            src={item.product.imageUrl || 'https://via.placeholder.com/80x80?text=Keyboard'}
+                            src={item.product.imageUrl ? (item.product.imageUrl.startsWith('/product-images/') ? BACKEND_URL + item.product.imageUrl : item.product.imageUrl) : 'https://via.placeholder.com/80x80?text=Keyboard'}
                             alt={item.product.name}
                             style={{
                               width: '100%',

@@ -16,6 +16,8 @@ import { Link } from 'react-router-dom';
 import { Order, OrderStatus } from '../../types';
 import { apiService } from '../../services/api';
 
+const BACKEND_URL = "http://localhost:8080";
+
 const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,7 +176,7 @@ const Orders: React.FC = () => {
                           onClick={() => window.location.href = `/products/${item.product.id}`}
                         >
                           <img
-                            src={item.product.imageUrl || 'https://via.placeholder.com/80x80?text=Keyboard'}
+                            src={item.product.imageUrl ? (item.product.imageUrl.startsWith('/product-images/') ? BACKEND_URL + item.product.imageUrl : item.product.imageUrl) : 'https://via.placeholder.com/80x80?text=Keyboard'}
                             alt={item.product.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
                           />
