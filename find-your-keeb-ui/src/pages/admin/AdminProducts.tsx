@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import {
   Container,
   Typography,
@@ -26,6 +26,7 @@ import {
   MenuItem,
   Switch,
   FormControlLabel,
+  Pagination,
 } from '@mui/material';
 import {
   Add,
@@ -36,8 +37,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Product, KeyboardLayout } from '../../types';
 import { apiService } from '../../services/api';
-
-const BACKEND_URL = "http://localhost:8080";
+import { BACKEND_URL } from '../../services/constants';
 
 const AdminProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -60,6 +60,11 @@ const AdminProducts: React.FC = () => {
     stockQuantity: '',
     imageUrl: '',
   });
+  const [editImageUploading, setEditImageUploading] = useState(false);
+  const [editImageError, setEditImageError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     fetchProducts();
@@ -137,12 +142,45 @@ const AdminProducts: React.FC = () => {
     }
   };
 
+  const handleEditImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setEditImageError('Image size must be less than 10MB');
+      return;
+    }
+    setEditImageUploading(true);
+    setEditImageError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch(`${BACKEND_URL}/api/products/upload-image`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Image upload failed');
+      const imagePath = await response.text();
+      setEditForm((prev) => ({ ...prev, imageUrl: imagePath }));
+    } catch (err) {
+      setEditImageError('Failed to upload image');
+    } finally {
+      setEditImageUploading(false);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(price);
   };
+
+  // Filter products by search term (case-insensitive, contains)
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
 
   if (loading) {
     return (
@@ -170,6 +208,20 @@ const AdminProducts: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Search Bar */}
+      <Box sx={{ mb: 2, maxWidth: 400 }}>
+        <TextField
+          fullWidth
+          label="Search by Name"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          variant="outlined"
+          size="small"
+          placeholder="Type product name..."
+          autoComplete="off"
+        />
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -191,7 +243,7 @@ const AdminProducts: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {products.map((product) => (
+            {paginatedProducts.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
                   <img
@@ -262,6 +314,19 @@ const AdminProducts: React.FC = () => {
         </Table>
       </TableContainer>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+            size="large"
+          />
+        </Box>
+      )}
+
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Edit Product</DialogTitle>
@@ -328,9 +393,40 @@ const AdminProducts: React.FC = () => {
             <TextField
               label="Image URL"
               value={editForm.imageUrl}
-              onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
               fullWidth
+              disabled
+              sx={{ gridColumn: '1 / -1' }}
             />
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{ gridColumn: '1 / -1', mb: 1 }}
+              disabled={editImageUploading}
+            >
+              Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleEditImageUpload}
+              />
+            </Button>
+            {editImageError && (
+              <Typography color="error" sx={{ gridColumn: '1 / -1' }}>{editImageError}</Typography>
+            )}
+            {editForm.imageUrl && (
+              <Box sx={{ gridColumn: '1 / -1', mt: 1 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Image Preview:
+                </Typography>
+                <img
+                  src={editForm.imageUrl.startsWith('/product-images/') ? BACKEND_URL + editForm.imageUrl : editForm.imageUrl}
+                  alt="Product preview"
+                  style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: 8, border: '1px solid #ddd' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              </Box>
+            )}
             <TextField
               label="Description"
               value={editForm.description}

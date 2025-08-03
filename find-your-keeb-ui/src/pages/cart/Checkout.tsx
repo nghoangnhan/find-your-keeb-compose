@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -19,8 +19,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { apiService } from '../../services/api';
-import { CheckoutRequest } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
 
 const Checkout: React.FC = () => {
   const { cart, refreshCart } = useCart();
@@ -29,10 +27,24 @@ const Checkout: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    phoneNumber: '',
     shippingAddress: '',
     billingAddress: '',
     paymentMethod: 'cod', // default to COD
   });
+
+  useEffect(() => {
+    // Autofill phone number from user profile
+    apiService.getProfile()
+      .then(profile => {
+        setFormData(prev => ({
+          ...prev,
+          phoneNumber: String(profile.phoneNumber || ''),
+          shippingAddress: String(profile.address || '')
+        }));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -59,6 +71,7 @@ const Checkout: React.FC = () => {
           productId: item.product.id,
           quantity: item.quantity,
         })) || [],
+        phoneNumber: formData.phoneNumber,
         shippingAddress: formData.shippingAddress,
         billingAddress: formData.billingAddress,
         paymentMethod: formData.paymentMethod,
@@ -100,7 +113,7 @@ const Checkout: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Checkout Form */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -108,6 +121,15 @@ const Checkout: React.FC = () => {
               </Typography>
 
               <Box component="form" onSubmit={handleSubmit}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleTextFieldChange}
+                  margin="normal"
+                  required
+                />
                 <TextField
                   fullWidth
                   label="Shipping Address"
@@ -162,7 +184,7 @@ const Checkout: React.FC = () => {
         </Grid>
 
         {/* Order Summary */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
