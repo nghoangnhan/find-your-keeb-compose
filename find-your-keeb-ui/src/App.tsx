@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -13,6 +12,7 @@ import { Cart, Checkout } from './pages/cart';
 import { Orders, OrderDetail } from './pages/orders';
 import { AdminDashboard, AdminProducts, AdminProductForm, AdminOrders } from './pages/admin';
 import ProtectedRoute from './components/ProtectedRoute';
+import Profile from './pages/Profile';
 
 const theme = createTheme({
   palette: {
@@ -108,6 +108,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <OrderDetail />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
                     </ProtectedRoute>
                   } 
                 />

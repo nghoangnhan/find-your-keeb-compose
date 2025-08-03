@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Chip,
   Container,
   CircularProgress,
   Alert,
@@ -15,14 +14,18 @@ import {
   Step,
   StepLabel,
   Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  SelectChangeEvent,
 } from '@mui/material';
 import { ArrowBack, LocalShipping, Payment, LocationOn } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Order, OrderStatus } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-
-const BACKEND_URL = "http://localhost:8080";
+import { BACKEND_URL } from '../../services/constants';
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +34,9 @@ const OrderDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -106,6 +112,22 @@ const OrderDetail: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (e: SelectChangeEvent) => {
+    if (!order) return;
+    const newStatus = e.target.value as OrderStatus;
+    setStatusUpdating(true);
+    setStatusError(null);
+    try {
+      const updatedOrder = await apiService.updateOrderStatus(order.id, newStatus);
+      setOrder(updatedOrder);
+      setShowStatusDropdown(false); // Hide dropdown after change
+    } catch (err: any) {
+      setStatusError('Failed to update order status');
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg">
@@ -152,22 +174,37 @@ const OrderDetail: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Order Status */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Order Status</Typography>
-                <Chip
-                  label={order.status.replace('_', ' ')}
-                  color={getStatusColor(order.status) as any}
-                  size="medium"
-                />
+                {user?.role === 'ADMIN' && (
+                  <FormControl size="small" sx={{ minWidth: 140 }} disabled={statusUpdating}>
+                    <InputLabel id="order-status-label">Order Status</InputLabel>
+                    <Select
+                      labelId="order-status-label"
+                      value={order.status}
+                      label="Change Status"
+                      onChange={handleStatusChange}
+                    >
+                      <MenuItem value="PENDING">Pending</MenuItem>
+                      <MenuItem value="CONFIRMED">Confirmed</MenuItem>
+                      <MenuItem value="SHIPPED">Shipped</MenuItem>
+                      <MenuItem value="DELIVERED">Delivered</MenuItem>
+                      <MenuItem value="CANCELLED">Cancelled</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
               </Box>
+              {user?.role === 'ADMIN' && statusError && (
+                <Alert severity="error" sx={{ mb: 2 }}>{statusError}</Alert>
+              )}
               
               {order.status !== OrderStatus.CANCELLED && (
                 <Stepper activeStep={getStatusStep(order.status)} sx={{ mt: 2 }}>
                   <Step>
-                    <StepLabel>Order Placed</StepLabel>
+                    <StepLabel>Pending</StepLabel>
                   </Step>
                   <Step>
                     <StepLabel>Confirmed</StepLabel>
@@ -185,7 +222,7 @@ const OrderDetail: React.FC = () => {
         </Grid>
 
         {/* Order Items */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -221,11 +258,11 @@ const OrderDetail: React.FC = () => {
                 {(order.items || []).map((item) => (
                   <Paper key={item.id} sx={{ p: 2, mb: 2, boxShadow: 'none', background: 'transparent' }}>
                     <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={3}>
+                      <Grid size={{ xs: 3 }}>
                         <Box sx={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 1, background: '#222' }}>
                           <img
-                            src={item.product.imageUrl ? (item.product.imageUrl.startsWith('/product-images/') ? BACKEND_URL + item.product.imageUrl : item.product.imageUrl) : 'https://via.placeholder.com/80x80?text=Keyboard'}
-                            alt={item.product.name}
+                            src={item.imageUrl ? (item.imageUrl.startsWith('/product-images/') ? BACKEND_URL + item.imageUrl : item.imageUrl) : 'https://via.placeholder.com/80x80?text=Keyboard'}
+                            alt={item.productName}
                             style={{
                               width: '100%',
                               height: '100%',
@@ -235,18 +272,18 @@ const OrderDetail: React.FC = () => {
                           />
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid size={{ xs: 6 }}>
                         <Typography variant="h6" gutterBottom>
-                          {item.product.name}
+                          {item.productName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {item.product.brand} • {item.product.layout.replace('_', ' ')}
+                          {item.brand} • {(item.layout ? item.layout.replace('_', ' ') : '')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Quantity: {item.quantity}
                         </Typography>
                       </Grid>
-                      <Grid item xs={3}>
+                      <Grid size={{ xs: 3 }}>
                         <Typography variant="h6" color="primary" align="right">
                           {formatPrice(item.unitPrice * item.quantity)}
                         </Typography>
@@ -263,7 +300,7 @@ const OrderDetail: React.FC = () => {
         </Grid>
 
         {/* Order Summary */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -295,12 +332,27 @@ const OrderDetail: React.FC = () => {
                 <Typography variant="subtitle2" gutterBottom>
                   Order Information
                 </Typography>
+                {(order.firstName || order.lastName) && (
+                  <Typography variant="body2" color="text.secondary">
+                    Name: {[order.firstName, order.lastName].filter(Boolean).join(' ')}
+                  </Typography>
+                )}
+                {order.username && !order.firstName && !order.lastName && (
+                  <Typography variant="body2" color="text.secondary">
+                    Username: {order.username}
+                  </Typography>
+                )}
                 <Typography variant="body2" color="text.secondary">
                   Order Date: {formatDate(order.createdAt)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Order Number: #{order.id}
                 </Typography>
+                {order.phoneNumber && (
+                  <Typography variant="body2" color="text.secondary">
+                    Phone Number: {order.phoneNumber}
+                  </Typography>
+                )}
               </Box>
 
               {/* Shipping Information */}

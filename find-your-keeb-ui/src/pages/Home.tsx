@@ -8,19 +8,15 @@ import {
   CardContent,
   CardMedia,
   Container,
-  Chip,
-  Rating,
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { Keyboard, ShoppingCart, Star, AdminPanelSettings, ShoppingCart as OrdersIcon } from '@mui/icons-material';
+import { AdminPanelSettings, ShoppingCart as OrdersIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { apiService } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-
-const BACKEND_URL = "http://localhost:8080";
 
 const Home: React.FC = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -84,7 +80,7 @@ const Home: React.FC = () => {
       >
         <Container maxWidth="lg">
           <Grid container spacing={5} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="h2" component="h1" gutterBottom>
                 {isAdmin ? (
                   <>
@@ -174,7 +170,7 @@ const Home: React.FC = () => {
                 </Button>
               )}
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -221,7 +217,7 @@ const Home: React.FC = () => {
         ) : (
           <Grid container spacing={3}>
             {(featuredProducts || []).map((product) => (
-              <Grid item xs={12} sm={6} md={4} key={product.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
                 <Card
                   sx={{
                     height: '100%',
@@ -237,7 +233,7 @@ const Home: React.FC = () => {
                 >
                   <CardMedia
                     component="img"
-                    src={product.imageUrl ? (product.imageUrl.startsWith('/product-images/') ? BACKEND_URL + product.imageUrl : product.imageUrl) : 'https://via.placeholder.com/300x200?text=Keyboard'}
+                    src={product.imageUrl ? (product.imageUrl.startsWith('/product-images/') ? require('../services/constants').BACKEND_URL + product.imageUrl : product.imageUrl) : 'https://via.placeholder.com/300x200?text=Keyboard'}
                     alt={product.name}
                     sx={{ height: 200, objectFit: 'cover' }}
                   />

@@ -8,7 +8,6 @@ import {
   Typography,
   Button,
   Chip,
-  Rating,
   Container,
   FormControl,
   InputLabel,
@@ -28,8 +27,7 @@ import { Product, ProductFilterRequest, KeyboardLayout } from '../../types';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
-
-const BACKEND_URL = "http://localhost:8080";
+import { BACKEND_URL, API_BASE_URL } from '../../services/constants';
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,7 +61,7 @@ const Products: React.FC = () => {
       try {
         setLoading(true);
         console.log('Fetching products with filters:', activeFilters);
-        console.log('API base URL:', 'http://localhost:8080/api');
+        console.log('API base URL:', API_BASE_URL);
         
         const [productsResponse, brandsData, layoutsData] = await Promise.all([
           apiService.getProducts(activeFilters),
@@ -111,8 +109,11 @@ const Products: React.FC = () => {
 
   // Apply all draft filters at once
   const applyFilters = () => {
+    // Trim searchTerm before applying filters
+    const trimmedSearchTerm = draftFilters.searchTerm ? draftFilters.searchTerm.trim() : undefined;
     setActiveFilters({
       ...draftFilters,
+      searchTerm: trimmedSearchTerm,
       page: 0, // Reset to first page when applying new filters
     });
     setCurrentPage(1);
@@ -188,7 +189,7 @@ const Products: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Filters Sidebar */}
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -263,7 +264,7 @@ const Products: React.FC = () => {
                       handleDraftFilterChange('minPrice', min);
                       handleDraftFilterChange('maxPrice', max);
                     }}
-                    sx={{ width: '50%' }}
+                    sx={{ width: '50%', background: '#232323', color: '#fff', input: { color: '#fff' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#444' }, '&:hover fieldset': { borderColor: '#ffd700' }, '&.Mui-focused fieldset': { borderColor: '#ffd700' } } }}
                   />
                   <TextField
                     size="small"
@@ -277,7 +278,7 @@ const Products: React.FC = () => {
                       handleDraftFilterChange('maxPrice', max);
                       handleDraftFilterChange('minPrice', min);
                     }}
-                    sx={{ width: '50%' }}
+                    sx={{ width: '50%', background: '#232323', color: '#fff', input: { color: '#fff' }, '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#444' }, '&:hover fieldset': { borderColor: '#ffd700' }, '&.Mui-focused fieldset': { borderColor: '#ffd700' } } }}
                   />
                 </Box>
               </Box>
@@ -305,6 +306,19 @@ const Products: React.FC = () => {
                 sx={{ mb: 2 }}
               />
 
+              {/* Product Name Search */}
+              <TextField
+                fullWidth
+                label="Search by Name"
+                value={draftFilters.searchTerm || ''}
+                onChange={e => handleDraftFilterChange('searchTerm', e.target.value)}
+                variant="outlined"
+                size="small"
+                sx={{ mb: 2 }}
+                placeholder="Type product name..."
+                autoComplete="off"
+              />
+
               {/* Apply and Clear Buttons */}
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                 <Button
@@ -324,42 +338,15 @@ const Products: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* Show active filters summary */}
-              {hasActiveFilters() && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Active Filters:
-                  </Typography>
-                  {activeFilters.brand && (
-                    <Chip label={`Brand: ${activeFilters.brand}`} size="small" sx={{ mr: 1, mb: 1 }} />
-                  )}
-                  {activeFilters.layout && (
-                    <Chip label={`Layout: ${activeFilters.layout.replace('_', ' ')}`} size="small" sx={{ mr: 1, mb: 1 }} />
-                  )}
-                  {(activeFilters.minPrice || activeFilters.maxPrice) && (
-                    <Chip 
-                      label={`Price: $${activeFilters.minPrice || 0} - $${activeFilters.maxPrice || 500}`} 
-                      size="small" 
-                      sx={{ mr: 1, mb: 1 }} 
-                    />
-                  )}
-                  {activeFilters.rgbSupport && (
-                    <Chip label="RGB Support" size="small" sx={{ mr: 1, mb: 1 }} />
-                  )}
-                  {activeFilters.wirelessSupport && (
-                    <Chip label="Wireless" size="small" sx={{ mr: 1, mb: 1 }} />
-                  )}
-                </Box>
-              )}
             </CardContent>
           </Card>
         </Grid>
 
         {/* Products Grid */}
-        <Grid item xs={12} md={9}>
+        <Grid size={{ xs: 12, md: 9 }}>
           <Grid container spacing={3}>
             {(products || []).map((product) => (
-              <Grid item xs={12} sm={6} lg={4} key={product.id}>
+              <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={product.id}>
                 <Card
                   sx={{
                     height: '100%',

@@ -36,6 +36,7 @@ export interface ProductFilterRequest {
   wirelessSupport?: boolean;
   page?: number;
   size?: number;
+  searchTerm?: string; // Added for searching by product name
 }
 
 export interface CartItem {
@@ -96,13 +97,26 @@ export interface Order {
   shippingAddress: string;
   billingAddress: string;
   paymentMethod: string;
+  phoneNumber?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface OrderItem {
   id: number;
-  product: Product;
+  productName: string;
   quantity: number;
   unitPrice: number;
+  productId: number;
+  imageUrl: string;
+  brand: string;
+  layout: string;
+  switchType: string;
+  keycapMaterial: string;
+  caseMaterial: string;
+  rgbSupport: boolean;
+  wirelessSupport: boolean;
 }
 
 export enum OrderStatus {

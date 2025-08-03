@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { API_BASE_URL } from './constants';
 import {
   Product,
   ProductFilterRequest,
@@ -6,7 +7,6 @@ import {
   CartItemRequest,
   AuthRequest,
   RegisterRequest,
-  User,
   Order,
   CheckoutRequest,
   KeyboardLayout
@@ -27,7 +27,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: 'http://localhost:8080/api',
+      baseURL: API_BASE_URL,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -179,6 +179,17 @@ class ApiService {
 
   async updateOrderStatus(id: number, status: string): Promise<Order> {
     const response = await this.api.put(`/admin/orders/${id}/status?status=${status}`);
+    return response.data;
+  }
+
+  // Profile endpoints
+  async getProfile(): Promise<{ id: number; username: string; email: string; displayName: string; gender?: string; dateOfBirth?: string; address?: string; phoneNumber?: string }> {
+    const response = await this.api.get('/profile');
+    return response.data;
+  }
+
+  async updateProfile({ displayName, gender, dateOfBirth, address, phoneNumber }: { displayName: string; gender?: string; dateOfBirth?: string; address?: string; phoneNumber?: string }): Promise<{ id: number; username: string; email: string; displayName: string; gender?: string; dateOfBirth?: string; address?: string; phoneNumber?: string }> {
+    const response = await this.api.put('/profile', { displayName, gender, dateOfBirth, address, phoneNumber });
     return response.data;
   }
 }
